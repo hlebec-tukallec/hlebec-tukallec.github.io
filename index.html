@@ -1,1 +1,280 @@
-privet mir!
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Cat's Trail: 20th Birthday Escape</title>
+    <style>
+        :root { --frame-width: 1000px; --frame-height: 650px; }
+        body { margin: 0; background: #1a1a1a; font-family: 'Segoe UI', sans-serif; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        
+        #game-frame { 
+            position: relative; width: var(--frame-width); height: var(--frame-height); 
+            background: #000; border: 8px solid #333; border-radius: 12px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8); overflow: hidden; display: flex; flex-direction: column;
+        }
+
+        #scene { 
+            position: relative; flex-grow: 1; 
+            background-size: contain; background-repeat: no-repeat;
+            background-position: center; background-color: #000; 
+            cursor: crosshair; overflow: hidden;
+        }
+
+        .nav-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            font-size: 50px; color: rgba(255, 255, 255, 0.4);
+            cursor: pointer; z-index: 60; transition: 0.2s; padding: 15px; display: none;
+        }
+        .nav-arrow:hover { color: #fff; transform: translateY(-50%) scale(1.1); }
+        #arrow-left { left: 10px; }
+        #arrow-right { right: 10px; }
+
+        /* MASK FIX: Lower z-index than hotspots */
+        #mask {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle 140px at var(--x) var(--y), rgba(0,0,0,0) 0%, rgba(0,0,0,0.98) 100%);
+            pointer-events: none; display: none; z-index: 10;
+        }
+        #pitch-black { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: none; z-index: 5; justify-content: center; align-items: center; flex-direction: column; pointer-events: none; }
+
+        #text-overlay {
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); padding: 10px 20px; border-radius: 40px;
+            border: 1px solid #555; text-align: center; min-width: 280px; z-index: 70; pointer-events: none;
+        }
+
+        /* Inventory */
+        #inventory-bar { height: 110px; background: #111; display: flex; gap: 12px; justify-content: center; align-items: center; border-top: 2px solid #333; }
+        .slot {
+            width: 80px; height: 80px; border: 2px solid #444; border-radius: 8px;
+            background: #222; display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; position: relative;
+        }
+        .slot.selected { border-color: #ffcc00; background: #332b00; box-shadow: 0 0 10px #ffcc00; }
+        .slot img { max-width: 75%; max-height: 75%; object-fit: contain; }
+        .slot:hover::after { content: attr(data-name); position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: #ffcc00; color: #000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; z-index: 80; white-space: nowrap; }
+        .notification::before { content: ''; position: absolute; top: 5px; right: 5px; width: 12px; height: 12px; background: #ff3b30; border-radius: 50%; box-shadow: 0 0 8px #ff3b30; }
+
+        /* Phone Overlay */
+        #phone-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 260px; height: 460px; background: #000; border: 6px solid #333; border-radius: 30px; display: none; z-index: 100; flex-direction: column; box-shadow: 0 0 100px #000; overflow: hidden; }
+        #phone-screen { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
+        #lockscreen { position: absolute; width: 100%; height: 100%; background: url('lockscreen.png') center/cover; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding-top: 30px; }
+        .contact-item { padding: 12px; border-bottom: 1px solid #222; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .contact-item:hover { background: #1a242c; }
+        .contact-notify { width: 8px; height: 8px; background: #ff3b30; border-radius: 50%; margin-left: auto; }
+        #chat-body { flex-grow: 1; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: #0b141a; overflow-y: auto; }
+        .msg { background: #202c33; padding: 8px; border-radius: 8px; max-width: 85%; font-size: 13px; align-self: flex-start; }
+        .msg.user { background: #005c4b; align-self: flex-end; }
+        .chat-opt { background: #2a3942; border: 1px solid #444; padding: 8px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-bottom: 4px; }
+        .phone-btn { background: #333; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; font-size: 12px; }
+.phone-nav-btn { background: #333; padding: 15px; text-align: center; cursor: pointer; font-weight: bold; border-top: 1px solid #444; }
+
+        /* HOTSPOT FIX: Higher z-index than mask */
+        .hotspot { position: absolute; cursor: pointer; display: none; z-index: 20; }
+    </style>
+</head>
+<body>
+
+<div id="game-frame">
+    <div id="scene">
+        <div id="arrow-left" class="nav-arrow" onclick="navigate('left')">❮</div>
+        <div id="arrow-right" class="nav-arrow" onclick="navigate('right')" onmouseenter="hoverArrow(true)" onmouseleave="hoverArrow(false)">❯</div>
+        <div id="mask"></div>
+        <div id="pitch-black"><h2>It's way too dark...</h2></div>
+        <div id="text-overlay">Wait, where did Lans go?</div>
+
+        <div id="hs-porch-door" class="hotspot" style="width: 6%; height: 16%; top: 38%; left: 36%;" onclick="changeLoc('cellar')"></div>
+        <div id="hs-cellar-flashlight" class="hotspot" style="width: 18%;height: 15%;top: 19%;left: 16%;" onclick="pick('flashlight')"></div>
+        <div id="hs-cellar-banana" class="hotspot" style="width: 7%;height: 22%;top: 12%;left: 77%" onclick="pick('banana')"></div>
+        <div id="hs-sleeping-cat" class="hotspot" style="width: 17%;height: 18%;top: 71%;left: 16%" onclick="catClick()"></div>
+        <div id="hs-cellar-battery" class="hotspot" style="width: 12%;height: 15%;top: 72%;left: 18%" onclick="pick('battery')"></div>
+        
+        <div id="hs-storage-key" class="hotspot" style="width: 7%;height: 7%;top: 25%;left: 52%" onclick="pick('key')"></div>
+    </div>
+
+    <div id="inventory-bar">
+        <div class="slot" id="slot-0" onclick="openPhone()" data-name="Phone"></div>
+        <div class="slot" id="slot-1" onclick="selectSlot(1)"></div>
+        <div class="slot" id="slot-2" onclick="selectSlot(2)"></div>
+        <div class="slot" id="slot-3" onclick="selectSlot(3)"></div>
+    </div>
+
+    <div id="phone-overlay"><div id="phone-screen"></div></div>
+</div>
+
+<script>
+    const scene = document.getElementById('scene');
+    const mask = document.getElementById('mask');
+    const dark = document.getElementById('pitch-black');
+    const text = document.getElementById('text-overlay');
+    const phOverlay = document.getElementById('phone-overlay');
+    const phScreen = document.getElementById('phone-screen');
+
+    let state = {
+        loc: 'porch', inv: [{name:'Phone', file:'phone.png'}], sel: null,
+        lightReady: false, hasKey: false, lightOn: false,
+        phView: 'lock', mashaIdx: 0, notify: false, mashaNotify: false,
+        visitedCellar: false, catMoved: false, vetAns: null
+    };
+
+    const contacts = {
+        'Mom': { icon: '👩', msg: "Talking with Kolbasov..." },
+        'Dad': { icon: '👨', msg: "Growing petunias" },
+        'Brother': { icon: '👦', msg: "Somewhere in America" },
+        'Masha mother of Lans': { icon: '🐱', seq: ["DONT TOUCH MY CLOTHES", "Dishes day!", "Check the metallic basket!"] },
+        'Vet': { icon: '🏥', opts: ["Dr Panda?", "Bath issues?", "Exercise?"], ans: ["In the zoo?", "Use the toilet", "Find a banana"] }
+    };
+
+    const config = {
+        porch: { img: 'house.png', msg: "Wait, where did Lans go?", hs: ['hs-porch-door'] },
+        cellar: { img: 'cellar.png', msg: "The basement...", hs: ['hs-cellar-flashlight','hs-cellar-banana','hs-sleeping-cat','hs-cellar-battery'] },
+        storage: { img: 'storage.png', msg: "Pitch black.", hs: ['hs-storage-key'] },
+        finish: { img: 'finish.png', msg: "Happy 20th Birthday!", hs: [] }
+    };
+
+    function openPhone() {
+        state.phView = 'lock'; state.notify = false; 
+        drawPhone(); phOverlay.style.display = 'flex'; drawInv();
+    }
+
+    function drawPhone() {
+        if (state.phView === 'lock') {
+            const now = new Date();
+            phScreen.innerHTML = `<div id="lockscreen" onclick="state.phView='list';drawPhone()">
+                <div style="font-size:35px">${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}</div>
+                <div style="margin-top:auto;margin-bottom:43px;font-size:12px">Tap to Unlock</div>
+            </div><div class="phone-btn" onclick="phOverlay.style.display='none'">CLOSE</div>`;
+        } else if (state.phView === 'list') {
+            let h = `<div id="chat-header" style="font-weight:bold;padding:15px">Messages</div><div style="flex-grow:1;background:#000">`;
+            for (let n in contacts) {
+                h += `<div class="contact-item" onclick="openChat('${n}')">
+                    <div style="font-size:20px">${contacts[n].icon}</div>
+                    <div style="font-size:13px;font-weight:bold">${n}</div>
+                    ${(n==='Masha mother of Lans' && state.mashaNotify)?'<div class="contact-notify"></div>':''}
+                </div>`;
+            }
+            phScreen.innerHTML = h + `</div><div class="phone-btn" onclick="phOverlay.style.display='none'">CLOSE</div>`;
+        }
+    }
+
+    function openChat(n) {
+        if (n === 'Masha mother of Lans') state.mashaNotify = false;
+        state.phView = 'chat';
+        let h = `<div id="chat-header" style="padding:10px;border-bottom:1px solid #333">Chat: ${n}</div><div id="chat-body">`;
+        if (n === 'Vet') {
+            if (!state.visitedCellar) h += `<div style="text-align:center;color:#555">Empty</div>`;
+            else if (state.vetAns === null) contacts.Vet.opts.forEach((o,i) => h += `<div class="chat-opt" onclick="state.vetAns=${i};openChat('Vet')">${o}</div>`);
+            else h += `<div class="msg user">${contacts.Vet.opts[state.vetAns]}</div><div class="msg">${contacts.Vet.ans[state.vetAns]}</div><button onclick="state.vetAns=null;openChat('Vet')">Back</button>`;
+        } else if (n === 'Masha mother of Lans') {
+            h += `<div class="msg">${contacts[n].seq[state.mashaIdx]}</div>`;
+            if (state.mashaIdx < 2) state.mashaIdx++;
+        } else h += `<div class="msg">${contacts[n].msg}</div>`;
+        phScreen.innerHTML = h + `</div><div class="phone-nav-btn" onclick="state.phView='list';drawPhone()">BACK</div>`;
+    }
+
+    function changeLoc(l) {
+        state.loc = l;
+        if (l === 'cellar' && !state.visitedCellar) { state.notify = true; state.mashaNotify = true; state.visitedCellar = true; text.innerText = "Phone buzzed..."; }
+        render();
+    }
+
+    function navigate(d) {
+        const s = state.inv[state.sel];
+        if (state.loc === 'cellar' && d === 'right') changeLoc('storage');
+        else if (state.loc === 'storage' && d === 'left') changeLoc('cellar');
+        else if (state.loc === 'storage' && d === 'right') { if (s?.name === 'Key') changeLoc('finish'); else text.innerText = "Locked."; }
+        else if (state.loc === 'finish' && d === 'left') changeLoc('storage');
+    }
+
+    function render() {
+        dark.style.display = 'none'; mask.style.display = 'none';
+        document.getElementById('arrow-left').style.display = (state.loc !== 'porch' && state.loc !== 'cellar') ? 'block' : 'none';
+        document.getElementById('arrow-right').style.display = (state.loc !== 'finish' && state.loc !== 'porch') ? 'block' : 'none';
+        
+        const s = state.inv[state.sel]; 
+        
+        // FIX: Light stays on if fixed flashlight is selected OR if key is selected while holding flashlight
+        state.lightOn = (s?.name === 'Working Light' || (findInInv('Working Light') && s?.name === 'Key'));
+        
+        if (state.loc === 'cellar') scene.style.backgroundImage = `url(${state.catMoved ? 'cellar-after.png' : 'cellar.png'})`;
+        else if (state.loc === 'storage') {
+            scene.style.backgroundImage = `url(storage.png)`;
+            if (state.lightOn) mask.style.display = 'block'; else dark.style.display = 'flex';
+        } else scene.style.backgroundImage = `url(${config[state.loc].img})`;
+
+        text.innerText = config[state.loc].msg;
+        document.querySelectorAll('.hotspot').forEach(h => h.style.display = 'none');
+        
+        if (state.loc === 'storage' && !state.lightOn) return;
+
+        config[state.loc].hs.forEach(id => {
+            if (id === 'hs-cellar-flashlight' && findInInv('Flashlight')) return;
+            if (id === 'hs-cellar-banana' && findInInv('Banana Toy')) return;
+            if (id === 'hs-sleeping-cat' && state.catMoved) return;
+            if (id === 'hs-cellar-battery' && (findInInv('Battery') || !state.catMoved)) return;
+            if (id === 'hs-storage-key' && state.hasKey) return;
+            document.getElementById(id).style.display = 'block';
+        });
+        drawInv();
+    }
+
+    function pick(item) {
+        if (item === 'flashlight') state.inv.push({name:'Flashlight', file:'flashlight.png'});
+        if (item === 'banana') state.inv.push({name:'Banana Toy', file:'banana.png'});
+        if (item === 'battery') state.inv.push({name:'Battery', file:'battery.png'});
+        if (item === 'key') { state.hasKey = true; state.inv.push({name:'Key', file:'key.png'}); text.innerText = "Got the key!"; }
+        render();
+    }
+
+    function selectSlot(i) {
+        if (!state.inv[i]) return;
+        if (state.sel === i) state.sel = null;
+        else if (state.sel !== null && combine(state.sel, i)) state.sel = null;
+        else state.sel = i;
+        render();
+    }
+
+    function combine(a, b) {
+        const n = [state.inv[a].name, state.inv[b].name];
+        if (n.includes('Flashlight') && n.includes('Battery')) {
+            state.inv = state.inv.filter(i => i.name !== 'Flashlight' && i.name !== 'Battery');
+            state.inv.push({name:'Working Light', file:'flashlight_on.png'});
+            state.lightReady = true; return true;
+        }
+        return false;
+    }
+
+    function drawInv() {
+        for(let i=0; i<4; i++) {
+            const s = document.getElementById(`slot-${i}`);
+            s.innerHTML = ''; s.classList.remove('selected', 'notification');
+            if (state.sel === i) s.classList.add('selected');
+            if (state.inv[i]) {
+                const img = document.createElement('img'); img.src = state.inv[i].file;
+                s.appendChild(img); s.setAttribute('data-name', state.inv[i].name);
+                if (i===0 && state.notify) s.classList.add('notification');
+            } else s.setAttribute('data-name', '');
+        }
+    }
+
+    function catClick() {
+        const s = state.inv[state.sel];
+        if (s?.name === 'Banana Toy') {
+            state.catMoved = true; state.inv.splice(state.sel, 1); state.sel = null; render();
+        } else text.innerText = "sleeping cat, unmovable";
+    }
+
+    function findInInv(n) { return state.inv.find(i => i.name === n); }
+    function hoverArrow(e) { if (state.loc === 'storage' && !state.hasKey && e) text.innerText = "Locked."; }
+
+    scene.addEventListener('mousemove', e => {
+        const r = scene.getBoundingClientRect();
+        scene.style.setProperty('--x', (e.clientX - r.left) + 'px');
+        scene.style.setProperty('--y', (e.clientY - r.top) + 'px');
+    });
+
+    render();
+</script>
+</body>
+</html>
