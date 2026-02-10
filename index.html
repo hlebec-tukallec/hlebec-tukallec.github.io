@@ -262,7 +262,7 @@
         const s = state.inv[state.sel];
         if (s?.name === 'Banana Toy') {
             state.catMoved = true; state.inv.splice(state.sel, 1); state.sel = null; render();
-        } else text.innerText = "sleeping cat, unmovable";
+        } else text.innerText = "Ланс батонится!";
     }
 
     function findInInv(n) { return state.inv.find(i => i.name === n); }
