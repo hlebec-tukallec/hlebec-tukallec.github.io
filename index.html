@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Cat's Trail: 20th Birthday Escape</title>
+    <title>День рождения!</title>
     <style>
         :root { --frame-width: 1000px; --frame-height: 650px; }
         body { margin: 0; background: #1a1a1a; font-family: 'Segoe UI', sans-serif; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
@@ -81,8 +81,8 @@
         <div id="arrow-left" class="nav-arrow" onclick="navigate('left')">❮</div>
         <div id="arrow-right" class="nav-arrow" onclick="navigate('right')" onmouseenter="hoverArrow(true)" onmouseleave="hoverArrow(false)">❯</div>
         <div id="mask"></div>
-        <div id="pitch-black"><h2>It's way too dark...</h2></div>
-        <div id="text-overlay">Wait, where did Lans go?</div>
+        <div id="pitch-black"><h2>Слишком темно...</h2></div>
+        <div id="text-overlay">А где же Ланс?</div>
 
         <div id="hs-porch-door" class="hotspot" style="width: 6%; height: 16%; top: 38%; left: 36%;" onclick="changeLoc('cellar')"></div>
         <div id="hs-cellar-flashlight" class="hotspot" style="width: 18%;height: 15%;top: 19%;left: 16%;" onclick="pick('flashlight')"></div>
@@ -119,18 +119,18 @@
     };
 
     const contacts = {
-        'Mom': { icon: '👩', msg: "Talking with Kolbasov..." },
-        'Dad': { icon: '👨', msg: "Growing petunias" },
-        'Brother': { icon: '👦', msg: "Somewhere in America" },
-        'Masha mother of Lans': { icon: '🐱', seq: ["DONT TOUCH MY CLOTHES", "Dishes day!", "Check the metallic basket!"] },
-        'Vet': { icon: '🏥', opts: ["Dr Panda?", "Bath issues?", "Exercise?"], ans: ["In the zoo?", "Use the toilet", "Find a banana"] }
+        'Юля': { icon: '👩', msg: "Занята, болтает с Колбасовым..." },
+        'Кирилл': { icon: '👨', msg: "Занят, выращивает петуньи" },
+        'Саня': { icon: '👦', msg: "Где-то в Америке" },
+        'Маша мама Ланса': { icon: '🐱', seq: ["НЕ ТРОГАЙ МОЮ ОДЕЖДУ", "Твой день мыть посуду!", "Проверь металлическую корзинку, может там что-то есть"] },
+        'Ветеринарка': { icon: '🏥', opts: ["Записаться к доктору Панде", "Кошечка какает в ванну", "Как сдвинуть Ланса"], ans: ["У нас такого нет, свяжитесь с зоопарком", "Есть ли доказательства, что это именно кошечка, а не сестра", "Банан должен помочь, поищите его"] }
     };
 
     const config = {
-        porch: { img: 'house.png', msg: "Wait, where did Lans go?", hs: ['hs-porch-door'] },
-        cellar: { img: 'cellar.png', msg: "The basement...", hs: ['hs-cellar-flashlight','hs-cellar-banana','hs-sleeping-cat','hs-cellar-battery'] },
-        storage: { img: 'storage.png', msg: "Pitch black.", hs: ['hs-storage-key'] },
-        finish: { img: 'finish.png', msg: "Happy 20th Birthday!", hs: [] }
+        porch: { img: 'house.png', msg: "Где же Ланс?", hs: ['hs-porch-door'] },
+        cellar: { img: 'cellar.png', msg: "Подвал...", hs: ['hs-cellar-flashlight','hs-cellar-banana','hs-sleeping-cat','hs-cellar-battery'] },
+        storage: { img: 'storage.png', msg: "Слишком темно", hs: ['hs-storage-key'] },
+        finish: { img: 'finish.png', msg: "С ДНЕМ РОЖДЕНИЯ!", hs: [] }
     };
 
     function openPhone() {
@@ -159,14 +159,14 @@
     }
 
     function openChat(n) {
-        if (n === 'Masha mother of Lans') state.mashaNotify = false;
+        if (n === 'Маша мама Ланса') state.mashaNotify = false;
         state.phView = 'chat';
         let h = `<div id="chat-header" style="padding:10px;border-bottom:1px solid #333">Chat: ${n}</div><div id="chat-body">`;
-        if (n === 'Vet') {
+        if (n === 'Ветеринарка') {
             if (!state.visitedCellar) h += `<div style="text-align:center;color:#555">Empty</div>`;
-            else if (state.vetAns === null) contacts.Vet.opts.forEach((o,i) => h += `<div class="chat-opt" onclick="state.vetAns=${i};openChat('Vet')">${o}</div>`);
-            else h += `<div class="msg user">${contacts.Vet.opts[state.vetAns]}</div><div class="msg">${contacts.Vet.ans[state.vetAns]}</div><button onclick="state.vetAns=null;openChat('Vet')">Back</button>`;
-        } else if (n === 'Masha mother of Lans') {
+            else if (state.vetAns === null) contacts.Vet.opts.forEach((o,i) => h += `<div class="chat-opt" onclick="state.vetAns=${i};openChat('Ветеринарка')">${o}</div>`);
+            else h += `<div class="msg user">${contacts.Vet.opts[state.vetAns]}</div><div class="msg">${contacts.Vet.ans[state.vetAns]}</div><button onclick="state.vetAns=null;openChat('Ветеринарка')">Back</button>`;
+        } else if (n === 'Маша мама Ланса') {
             h += `<div class="msg">${contacts[n].seq[state.mashaIdx]}</div>`;
             if (state.mashaIdx < 2) state.mashaIdx++;
         } else h += `<div class="msg">${contacts[n].msg}</div>`;
@@ -175,7 +175,7 @@
 
     function changeLoc(l) {
         state.loc = l;
-        if (l === 'cellar' && !state.visitedCellar) { state.notify = true; state.mashaNotify = true; state.visitedCellar = true; text.innerText = "Phone buzzed..."; }
+        if (l === 'cellar' && !state.visitedCellar) { state.notify = true; state.mashaNotify = true; state.visitedCellar = true; text.innerText = "Сообщенька пришла!"; }
         render();
     }
 
@@ -183,7 +183,7 @@
         const s = state.inv[state.sel];
         if (state.loc === 'cellar' && d === 'right') changeLoc('storage');
         else if (state.loc === 'storage' && d === 'left') changeLoc('cellar');
-        else if (state.loc === 'storage' && d === 'right') { if (s?.name === 'Key') changeLoc('finish'); else text.innerText = "Locked."; }
+        else if (state.loc === 'storage' && d === 'right') { if (s?.name === 'Key') changeLoc('finish'); else text.innerText = "Заперто!"; }
         else if (state.loc === 'finish' && d === 'left') changeLoc('storage');
     }
 
