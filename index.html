@@ -151,7 +151,7 @@
                 h += `<div class="contact-item" onclick="openChat('${n}')">
                     <div style="font-size:20px">${contacts[n].icon}</div>
                     <div style="font-size:13px;font-weight:bold">${n}</div>
-                    ${(n==='Masha mother of Lans' && state.mashaNotify)?'<div class="contact-notify"></div>':''}
+                    ${(n==='Маша мама Ланса' && state.mashaNotify)?'<div class="contact-notify"></div>':''}
                 </div>`;
             }
             phScreen.innerHTML = h + `</div><div class="phone-btn" onclick="phOverlay.style.display='none'">CLOSE</div>`;
@@ -164,8 +164,8 @@
         let h = `<div id="chat-header" style="padding:10px;border-bottom:1px solid #333">Chat: ${n}</div><div id="chat-body">`;
         if (n === 'Ветеринарка') {
             if (!state.visitedCellar) h += `<div style="text-align:center;color:#555">Empty</div>`;
-            else if (state.vetAns === null) contacts.Vet.opts.forEach((o,i) => h += `<div class="chat-opt" onclick="state.vetAns=${i};openChat('Ветеринарка')">${o}</div>`);
-            else h += `<div class="msg user">${contacts.Vet.opts[state.vetAns]}</div><div class="msg">${contacts.Vet.ans[state.vetAns]}</div><button onclick="state.vetAns=null;openChat('Ветеринарка')">Back</button>`;
+            else if (state.vetAns === null) contacts.Ветеринарка.opts.forEach((o,i) => h += `<div class="chat-opt" onclick="state.vetAns=${i};openChat('Ветеринарка')">${o}</div>`);
+            else h += `<div class="msg user">${contacts.Ветеринарка.opts[state.vetAns]}</div><div class="msg">${contacts.Ветеринарка.ans[state.vetAns]}</div><button onclick="state.vetAns=null;openChat('Ветеринарка')">Back</button>`;
         } else if (n === 'Маша мама Ланса') {
             h += `<div class="msg">${contacts[n].seq[state.mashaIdx]}</div>`;
             if (state.mashaIdx < 2) state.mashaIdx++;
@@ -266,7 +266,7 @@
     }
 
     function findInInv(n) { return state.inv.find(i => i.name === n); }
-    function hoverArrow(e) { if (state.loc === 'storage' && !state.hasKey && e) text.innerText = "Locked."; }
+    function hoverArrow(e) { if (state.loc === 'storage' && !state.hasKey && e) text.innerText = "Заперто!"; }
 
     scene.addEventListener('mousemove', e => {
         const r = scene.getBoundingClientRect();
